@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - Kare Healthcare</title>
+    <link rel="stylesheet" href="./assets/css/styles.css">
+    <link rel="stylesheet" href="./assets/css/auth.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Kare</a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="#" class="nav-link">About</a></li>
+                <li><a href="#" class="nav-link">Services</a></li>
+                <li><a href="#" class="nav-link">Contact</a></li>
+                <li class="auth-buttons">
+                    <a href="login.html" class="btn-secondary">Sign In</a>
+                    <a href="signup.html" class="btn-primary active">Sign Up</a>
+                </li>
+            </ul>
+            <div class="menu-toggle" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Signup Section -->
+    <section class="auth-section">
+        <div class="auth-container">
+            <div class="auth-card">
+                <div class="auth-header">
+                    <h1>Create Account</h1>
+                </div>
+
+                <!-- Signup Form -->
+                <form class="auth-form" id="signupForm" onsubmit="handleSignup(event)">
+                    <!-- Personal Information Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">Personal Information</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name *</label>
+                                <input 
+                                    type="text" 
+                                    id="firstName" 
+                                    name="firstName" 
+                                    required 
+                                    placeholder="Enter your first name"
+                                    autocomplete="given-name"
+                                >
+                                <div class="error-message" id="firstNameError"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="lastName">Last Name *</label>
+                                <input 
+                                    type="text" 
+                                    id="lastName" 
+                                    name="lastName" 
+                                    required 
+                                    placeholder="Enter your last name"
+                                    autocomplete="family-name"
+                                >
+                                <div class="error-message" id="lastNameError"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="email">Email Address *</label>
+                            <input 
+                                type="email" 
+                                id="email" 
+                                name="email" 
+                                required 
+                                placeholder="Enter your email address"
+                                autocomplete="email"
+                            >
+                            <div class="form-hint">We'll use this for account verification and important health updates</div>
+                            <div class="error-message" id="emailError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="phone">Phone Number</label>
+                            <input 
+                                type="tel" 
+                                id="phone" 
+                                name="phone" 
+                                placeholder="(555) 123-4567"
+                                autocomplete="tel"
+                            >
+                            <div class="form-hint">Optional - for emergency contact and appointment reminders</div>
+                            <div class="error-message" id="phoneError"></div>
+                        </div>
+                    </div>
+
+                    <!-- Health Information Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">Health Information</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="dateOfBirth">Date of Birth *</label>
+                                <input 
+                                    type="date" 
+                                    id="dateOfBirth" 
+                                    name="dateOfBirth" 
+                                    required
+                                    max=""
+                                >
+                                <div class="form-hint">Required for age-appropriate health recommendations</div>
+                                <div class="error-message" id="dateOfBirthError"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="gender">Gender</label>
+                                <select id="gender" name="gender">
+                                    <option value="">Select gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="non-binary">Non-binary</option>
+                                    <option value="prefer-not-to-say">Prefer not to say</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <div class="form-hint">Helps provide gender-specific health guidance</div>
+                                <div class="error-message" id="genderError"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="height">Height (cm)</label>
+                                <input 
+                                    type="number" 
+                                    id="height" 
+                                    name="height" 
+                                    placeholder="170"
+                                    min="50"
+                                    max="300"
+                                    step="0.1"
+                                >
+                                <div class="form-hint">Optional - for BMI calculations and health assessments</div>
+                                <div class="error-message" id="heightError"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="weight">Weight (kg)</label>
+                                <input 
+                                    type="number" 
+                                    id="weight" 
+                                    name="weight" 
+                                    placeholder="70"
+                                    min="10"
+                                    max="500"
+                                    step="0.1"
+                                >
+                                <div class="form-hint">Optional - for BMI calculations and health assessments</div>
+                                <div class="error-message" id="weightError"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="bloodType">Blood Type</label>
+                            <select id="bloodType" name="bloodType">
+                                <option value="">Select blood type</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="unknown">Unknown</option>
+                            </select>
+                            <div class="form-hint">Optional - important for emergency situations</div>
+                            <div class="error-message" id="bloodTypeError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="allergies">Known Allergies</label>
+                            <textarea 
+                                id="allergies" 
+                                name="allergies" 
+                                placeholder="List any known allergies (medications, foods, environmental, etc.)"
+                                rows="3"
+                            ></textarea>
+                            <div class="form-hint">Optional - helps avoid recommending harmful substances</div>
+                            <div class="error-message" id="allergiesError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="medications">Current Medications</label>
+                            <textarea 
+                                id="medications" 
+                                name="medications" 
+                                placeholder="List current medications and dosages"
+                                rows="3"
+                            ></textarea>
+                            <div class="form-hint">Optional - helps identify potential drug interactions</div>
+                            <div class="error-message" id="medicationsError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="medicalConditions">Existing Medical Conditions</label>
+                            <textarea 
+                                id="medicalConditions" 
+                                name="medicalConditions" 
+                                placeholder="List any chronic conditions, past surgeries, or ongoing health issues"
+                                rows="3"
+                            ></textarea>
+                            <div class="form-hint">Optional - provides context for health recommendations</div>
+                            <div class="error-message" id="medicalConditionsError"></div>
+                        </div>
+                    </div>
+
+                    <!-- Emergency Contact Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">Emergency Contact</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="emergencyContactName">Contact Name</label>
+                                <input 
+                                    type="text" 
+                                    id="emergencyContactName" 
+                                    name="emergencyContactName" 
+                                    placeholder="Full name of emergency contact"
+                                >
+                                <div class="error-message" id="emergencyContactNameError"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="emergencyContactRelation">Relationship</label>
+                                <select id="emergencyContactRelation" name="emergencyContactRelation">
+                                    <option value="">Select relationship</option>
+                                    <option value="spouse">Spouse</option>
+                                    <option value="parent">Parent</option>
+                                    <option value="child">Child</option>
+                                    <option value="sibling">Sibling</option>
+                                    <option value="friend">Friend</option>
+                                    <option value="other">Other</option>
+                                </select>
+                                <div class="error-message" id="emergencyContactRelationError"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="emergencyContactPhone">Contact Phone</label>
+                            <input 
+                                type="tel" 
+                                id="emergencyContactPhone" 
+                                name="emergencyContactPhone" 
+                                placeholder="(555) 123-4567"
+                            >
+                            <div class="error-message" id="emergencyContactPhoneError"></div>
+                        </div>
+                    </div>
+
+                    <!-- Account Security Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">Account Security</h3>
+                        
+                        <div class="form-group">
+                            <label for="password">Password *</label>
+                            <input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                required 
+                                placeholder="Create a strong password"
+                                autocomplete="new-password"
+                            >
+                            <div class="password-requirements">
+                                <div class="form-hint">Password must contain:</div>
+                                <ul class="requirements-list">
+                                    <li id="req-length">At least 8 characters</li>
+                                    <li id="req-uppercase">One uppercase letter</li>
+                                    <li id="req-lowercase">One lowercase letter</li>
+                                    <li id="req-number">One number</li>
+                                    <li id="req-special">One special character</li>
+                                </ul>
+                            </div>
+                            <div class="error-message" id="passwordError"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="confirmPassword">Confirm Password *</label>
+                            <input 
+                                type="password" 
+                                id="confirmPassword" 
+                                name="confirmPassword" 
+                                required 
+                                placeholder="Confirm your password"
+                                autocomplete="new-password"
+                            >
+                            <div class="error-message" id="confirmPasswordError"></div>
+                        </div>
+                    </div>
+
+                    <!-- Privacy and Consent Section -->
+                    <div class="form-section">
+                        <h3 class="section-title">Privacy & Consent</h3>
+                        
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
+                                <span class="checkmark"></span>
+                                I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a> *
+                            </label>
+                            <div class="error-message" id="termsError"></div>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="agreeHIPAA" name="agreeHIPAA" required>
+                                <span class="checkmark"></span>
+                                I understand and consent to the collection and use of my health information as described in the <a href="#" target="_blank">HIPAA Privacy Notice</a> *
+                            </label>
+                            <div class="error-message" id="hipaaError"></div>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="agreeDataProcessing" name="agreeDataProcessing" required>
+                                <span class="checkmark"></span>
+                                I consent to the processing of my personal and health data for the purpose of providing healthcare services *
+                            </label>
+                            <div class="error-message" id="dataProcessingError"></div>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="marketingEmails" name="marketingEmails">
+                                <span class="checkmark"></span>
+                                I would like to receive health tips, wellness newsletters, and promotional emails
+                            </label>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="smsNotifications" name="smsNotifications">
+                                <span class="checkmark"></span>
+                                I consent to receive SMS notifications for appointment reminders and health alerts
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr class="divider-horizontal">
+
+                    <button type="submit" class="btn-primary auth-btn">
+                        <span class="btn-text">Create My Healthcare Account</span>
+                        <span class="loading-spinner hidden">Creating account...</span>
+                    </button>
+                </form>
+
+                <div class="auth-footer">
+                    <p>Already have an account? <a href="login.html">Sign in</a></p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="./assets/js/main.js"></script>
+    <script src="./assets/js/auth.js"></script>
+    <script src="./assets/js/signup.js"></script>
+</body>
+</html>
+
+
+

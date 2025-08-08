@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - Kare Healthcare</title>
+    <link rel="stylesheet" href="./assets/css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Page Loader -->
+    <div class="page-loader" id="pageLoader">
+        <div>
+            <div class="spinner"></div>
+            <div class="loading-text">Loading about us...</div>
+        </div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">Kare</a>
+            <ul class="nav-menu">
+                <li><a href="index.html" class="nav-link">Home</a></li>
+                <li><a href="vital.html" class="nav-link">Vitals</a></li>
+                <li><a href="chat.html" class="nav-link">Chat</a></li>
+                <li><a href="about.html" class="nav-link active">About</a></li>
+                <li><a href="chat.html" class="btn-primary">Start Chat</a></li>
+                <li class="auth-buttons">
+                    <a href="login.html" class="btn-secondary">Sign In</a>
+                    <a href="signup.html" class="btn-primary">Sign Up</a>
+                </li>
+                <!-- Vital Page button (hidden by default, shown when logged in) -->
+                <li class="vital-button hidden" id="vitalPageButton">
+                    <a href="vital.html" class="btn-primary">Vitals</a>
+                </li>
+                <!-- Profile dropdown (hidden by default, shown when logged in) -->
+                <li class="profile-dropdown hidden" id="profileDropdown">
+                    <button class="profile-btn" onclick="toggleProfileDropdown()">
+                        <div class="profile-avatar-small" id="profileAvatarSmall">U</div>
+                        <span id="profileName">User</span>
+                    </button>
+                    <div class="profile-menu">
+                        <a href="profile.html">My Profile</a>
+                        <a href="vital.html">Vitals</a>
+                        <a href="chat.html">My Chats</a>
+                        <a href="#" onclick="logout()">Sign Out</a>
+                    </div>
+                </li>
+            </ul>
+            <div class="menu-toggle" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" style="background: linear-gradient(135deg, var(--primary-blue) 0%, var(--dark-blue) 100%); color: white; padding: 100px 0 80px;">
+        <div class="container text-center">
+            <h1 style="font-size: 3.5rem; font-weight: 800; margin-bottom: 1.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                About Kare Healthcare
+            </h1>
+            <p style="font-size: 1.3rem; max-width: 700px; margin: 0 auto; opacity: 0.95; line-height: 1.6;">
+                Revolutionizing healthcare through AI-powered assistance, real-time monitoring, and personalized care solutions.
+            </p>
+        </div>
+    </section>
+
+    <!-- Mission Section -->
+    <section style="padding: 80px 0; background: white;">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;">
+                <div>
+                    <h2 style="font-size: 2.5rem; color: var(--dark-blue); margin-bottom: 2rem; font-weight: 700;">
+                        Our Mission
+                    </h2>
+                    <p style="font-size: 1.1rem; color: var(--medium-gray); line-height: 1.8; margin-bottom: 1.5rem;">
+                        At Kare Healthcare, we believe that quality healthcare should be accessible to everyone, everywhere, at any time. 
+                        Our mission is to democratize healthcare by combining cutting-edge artificial intelligence with medical expertise 
+                        to provide instant, reliable, and personalized health guidance.
+                    </p>
+                    <p style="font-size: 1.1rem; color: var(--medium-gray); line-height: 1.8;">
+                        We're committed to bridging the gap between patients and healthcare professionals, making medical knowledge 
+                        more accessible while maintaining the highest standards of accuracy and privacy.
+                    </p>
+                </div>
+                <div style="text-align: center;">
+                    <div style="background: linear-gradient(135deg, var(--light-blue), white); padding: 3rem; border-radius: 20px; box-shadow: var(--shadow-lg);">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">🎯</div>
+                        <h3 style="color: var(--dark-blue); font-size: 1.5rem; margin-bottom: 1rem;">Our Vision</h3>
+                        <p style="color: var(--medium-gray);">A world where healthcare guidance is instantly accessible, personalized, and trusted by millions.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- What We Do Section -->
+    <section style="padding: 80px 0; background: #f8fafc;">
+        <div class="container">
+            <div class="text-center" style="margin-bottom: 4rem;">
+                <h2 style="font-size: 2.5rem; color: var(--dark-blue); margin-bottom: 1rem; font-weight: 700;">
+                    What We Do
+                </h2>
+                <p style="font-size: 1.2rem; color: var(--medium-gray); max-width: 600px; margin: 0 auto;">
+                    Kare Healthcare offers a comprehensive suite of AI-powered health services designed to support your wellness journey.
+                </p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+                <div class="user-info-card" style="text-align: center; padding: 2.5rem;">
+                    <div style="font-size: 3.5rem; margin-bottom: 1.5rem;">🤖</div>
+                    <h3 style="color: var(--dark-blue); font-size: 1.4rem; margin-bottom: 1rem;">AI Health Assistant</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6;">
+                        Get instant answers to your health questions from our advanced AI assistant, trained on vast medical databases 
+                        and latest healthcare research.
+                    </p>
+                </div>
+
+                <div class="user-info-card" style="text-align: center; padding: 2.5rem;">
+                    <div style="font-size: 3.5rem; margin-bottom: 1.5rem;">📊</div>
+                    <h3 style="color: var(--dark-blue); font-size: 1.4rem; margin-bottom: 1rem;">Vital Signs Monitoring</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6;">
+                        Connect your wearable devices to monitor vital signs in real-time, including temperature, heart rate, 
+                        and oxygen saturation levels.
+                    </p>
+                </div>
+
+                <div class="user-info-card" style="text-align: center; padding: 2.5rem;">
+                    <div style="font-size: 3.5rem; margin-bottom: 1.5rem;">👤</div>
+                    <h3 style="color: var(--dark-blue); font-size: 1.4rem; margin-bottom: 1rem;">Personal Health Profiles</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6;">
+                        Maintain comprehensive health profiles with medical history, medications, and personalized 
+                        recommendations tailored to your needs.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Our Values Section -->
+    <section style="padding: 80px 0; background: white;">
+        <div class="container">
+            <div class="text-center" style="margin-bottom: 4rem;">
+                <h2 style="font-size: 2.5rem; color: var(--dark-blue); margin-bottom: 1rem; font-weight: 700;">
+                    Our Core Values
+                </h2>
+                <p style="font-size: 1.2rem; color: var(--medium-gray); max-width: 600px; margin: 0 auto;">
+                    These principles guide everything we do at Kare Healthcare.
+                </p>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem;">
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="width: 80px; height: 80px; background: var(--primary-blue); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem;">
+                        🔒
+                    </div>
+                    <h3 style="color: var(--dark-blue); margin-bottom: 1rem;">Privacy First</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6;">
+                        Your health data is protected with enterprise-grade security and strict privacy measures. 
+                        We never share your personal information without consent.
+                    </p>
+                </div>
+
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="width: 80px; height: 80px; background: var(--success-green); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem;">
+                        ✅
+                    </div>
+                    <h3 style="color: var(--dark-blue); margin-bottom: 1rem;">Accuracy & Reliability</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6;">
+                        Our AI is continuously updated with the latest medical research and guidelines to ensure 
+                        accurate and reliable health information.
+                    </p>
+                </div>
+
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="width: 80px; height: 80px; background: var(--accent-teal); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem;">
+                        🌍
+                    </div>
+                    <h3 style="color: var(--dark-blue); margin-bottom: 1rem;">Accessibility</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6;">
+                        Healthcare should be accessible to everyone. Our platform is designed to be inclusive, 
+                        user-friendly, and available 24/7.
+                    </p>
+                </div>
+
+                <div style="text-align: center; padding: 2rem;">
+                    <div style="width: 80px; height: 80px; background: var(--warning-orange); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem;">
+                        💡
+                    </div>
+                    <h3 style="color: var(--dark-blue); margin-bottom: 1rem;">Innovation</h3>
+                    <p style="color: var(--medium-gray); line-height: 1.6;">
+                        We continuously innovate and improve our technology to provide better healthcare solutions 
+                        and user experiences.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Technology Section -->
+    <section style="padding: 80px 0; background: #f8fafc;">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;">
+                <div style="text-align: center;">
+                    <div style="background: white; padding: 3rem; border-radius: 20px; box-shadow: var(--shadow-lg);">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">⚡</div>
+                        <h3 style="color: var(--dark-blue); font-size: 1.5rem; margin-bottom: 1rem;">Advanced AI Technology</h3>
+                        <p style="color: var(--medium-gray); line-height: 1.6;">
+                            Powered by state-of-the-art machine learning algorithms and natural language processing 
+                            to understand and respond to your health concerns accurately.
+                        </p>
+                    </div>
+                </div>
+                <div>
+                    <h2 style="font-size: 2.5rem; color: var(--dark-blue); margin-bottom: 2rem; font-weight: 700;">
+                        Cutting-Edge Technology
+                    </h2>
+                    <p style="font-size: 1.1rem; color: var(--medium-gray); line-height: 1.8; margin-bottom: 1.5rem;">
+                        Kare Healthcare leverages the latest advancements in artificial intelligence, machine learning, 
+                        and healthcare technology to provide you with the most accurate and helpful health guidance.
+                    </p>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="display: flex; align-items: center; margin-bottom: 1rem; font-size: 1.1rem; color: var(--medium-gray);">
+                            <span style="color: var(--success-green); margin-right: 0.75rem; font-size: 1.2rem;">✓</span>
+                            Natural Language Processing for better understanding
+                        </li>
+                        <li style="display: flex; align-items: center; margin-bottom: 1rem; font-size: 1.1rem; color: var(--medium-gray);">
+                            <span style="color: var(--success-green); margin-right: 0.75rem; font-size: 1.2rem;">✓</span>
+                            Real-time device integration and monitoring
+                        </li>
+                        <li style="display: flex; align-items: center; margin-bottom: 1rem; font-size: 1.1rem; color: var(--medium-gray);">
+                            <span style="color: var(--success-green); margin-right: 0.75rem; font-size: 1.2rem;">✓</span>
+                            Secure cloud infrastructure with 99.9% uptime
+                        </li>
+                        <li style="display: flex; align-items: center; margin-bottom: 1rem; font-size: 1.1rem; color: var(--medium-gray);">
+                            <span style="color: var(--success-green); margin-right: 0.75rem; font-size: 1.2rem;">✓</span>
+                            Continuous learning and improvement algorithms
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+   
+
+
+    <!-- CTA Section -->
+    <section style="padding: 80px 0; background: white;">
+        <div class="container text-center">
+            <h2 style="font-size: 2.5rem; color: var(--dark-blue); margin-bottom: 1rem; font-weight: 700;">
+                Ready to Experience Better Healthcare?
+            </h2>
+            <p style="font-size: 1.2rem; color: var(--medium-gray); margin-bottom: 2.5rem; max-width: 600px; margin-left: auto; margin-right: auto;">
+                Join thousands of users who trust Kare for their healthcare needs. Start your journey to better health today.
+            </p>
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+                <a href="chat.html" class="btn-primary" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                    💬 Start Free Consultation
+                </a>
+                <a href="signup.html" class="btn-secondary" style="font-size: 1.1rem; padding: 1rem 2rem;">
+                    📝 Create Account
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer style="background: var(--dark-blue); color: white; padding: 3rem 0 2rem;">
+        <div class="container">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; margin-bottom: 2rem;">
+                <div>
+                    <h3 style="font-size: 1.5rem; margin-bottom: 1rem; font-weight: 700;">Kare Healthcare</h3>
+                    <p style="opacity: 0.8; line-height: 1.6;">
+                        Your trusted AI healthcare assistant, providing personalized health guidance and real-time monitoring solutions.
+                    </p>
+                </div>
+                <div>
+                    <h4 style="margin-bottom: 1rem; font-weight: 600;">Quick Links</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="index.html" style="color: rgba(255,255,255,0.8); text-decoration: none;">Home</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="about.html" style="color: rgba(255,255,255,0.8); text-decoration: none;">About Us</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="chat.html" style="color: rgba(255,255,255,0.8); text-decoration: none;">AI Assistant</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="vital.html" style="color: rgba(255,255,255,0.8); text-decoration: none;">Vital Signs</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 style="margin-bottom: 1rem; font-weight: 600;">Support</h4>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 0.5rem;"><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Help Center</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Privacy Policy</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Terms of Service</a></li>
+                        <li style="margin-bottom: 0.5rem;"><a href="#" style="color: rgba(255,255,255,0.8); text-decoration: none;">Contact Us</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div style="border-top: 1px solid rgba(255,255,255,0.2); padding-top: 2rem; text-align: center;">
+                <p style="opacity: 0.8;">&copy; 2024 Kare Healthcare. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="./assets/js/main.js"></script>
+    <script>
+        // Page loader functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Show page loader initially
+            const loader = document.getElementById('pageLoader');
+            
+            // Hide loader after content loads
+            setTimeout(() => {
+                if (loader) {
+                    loader.classList.add('hidden');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vital Signs - Kare Healthcare</title>
+  <link rel="stylesheet" href="./assets/css/styles.css" />
+  <link rel="stylesheet" href="./assets/css/vital.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo">Kare</a>
+      <ul class="nav-menu">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="vital.html" class="nav-link active">Vitals</a></li>
+        <li><a href="chat.html" class="nav-link">Chat</a></li>
+        <li><a href="about.html" class="nav-link">About</a></li>
+        <!-- Profile dropdown -->
+        <li class="profile-dropdown" id="profileDropdown">
+          <button class="profile-btn" onclick="toggleProfileDropdown()">
+            <div class="profile-avatar-small" id="profileAvatarSmall">U</div>
+            <span id="profileName">User</span>
+          </button>
+          <div class="profile-menu">
+            <a href="profile.html">My Profile</a>
+            <a href="vital.html">Vitals</a>
+            <a href="chat.html">My Chats</a>
+            <a href="#" onclick="logout()">Sign Out</a>
+          </div>
+        </li>
+      </ul>
+      <div class="menu-toggle" onclick="toggleMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="vital-page">
+    <div class="container">
+      <!-- Header -->
+      <div class="page-header">
+        <h1>Vital Signs Dashboard</h1>
+        <p>Monitor your health metrics in real-time</p>
+        <div class="last-updated">
+          Last updated: <span id="lastUpdated">--</span>
+        </div>
+      </div>
+
+      <!-- Device Status Section -->
+      <section class="device-status-section" id="deviceStatusSection">
+        <!-- Device Not Linked View -->
+        <div class="device-not-linked" id="deviceNotLinked" style="display: block;">
+          <div class="device-setup-card">
+            <div class="device-icon">📱</div>
+            <h2>No Device Linked</h2>
+            <p>Connect your wearable device to start monitoring your vital signs in real-time.</p>
+            
+            <div class="device-link-form">
+              <div class="form-group">
+                <label for="deviceIdInput">Device ID</label>
+                <input 
+                  type="text" 
+                  id="deviceIdInput" 
+                  placeholder="Enter your device ID (e.g., ESP32-ABC123)"
+                  class="device-input"
+                >
+                <div class="form-hint">You can find your device ID on the device screen or in the manual</div>
+              </div>
+              
+              <button onclick="linkDevice()" class="btn-primary device-link-btn" id="linkDeviceBtn">
+                <span class="btn-text">Link Device</span>
+                <span class="loading-spinner hidden">Linking...</span>
+              </button>
+            </div>
+            
+            <div class="device-help">
+              <h4>Need Help?</h4>
+              <ul>
+                <li>Make sure your device is powered on and connected to WiFi</li>
+                <li>Check that your device ID is correct (usually starts with ESP32-)</li>
+                <li>Contact support if you're having trouble finding your device ID</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Device Linked View -->
+        <div class="device-linked" id="deviceLinked" style="display: none;">
+          <!-- Device Info Bar -->
+          <div class="device-info-bar">
+            <div class="device-info">
+              <div class="device-icon-small">📱</div>
+              <div class="device-details">
+                <span class="device-name" id="deviceName">ESP32 Device</span>
+                <span class="device-id" id="linkedDeviceId">ESP32-ABC123</span>
+              </div>
+            </div>
+            <div class="device-actions">
+              <button onclick="refreshData()" class="btn-secondary refresh-btn" id="refreshBtn">
+                <span class="refresh-icon">🔄</span> Refresh
+              </button>
+              <button onclick="unlinkDevice()" class="btn-danger unlink-btn">
+                Unlink Device
+              </button>
+            </div>
+          </div>
+
+          <!-- Current Vitals Cards -->
+          <div class="vitals-grid">
+            <div class="vital-card">
+              <div class="vital-icon">❤️</div>
+              <div class="vital-info">
+                <h3>Heart Rate</h3>
+                <div class="vital-value">
+                  <span id="heartRate">--</span>
+                  <span class="unit">bpm</span>
+                </div>
+                <div class="vital-status" id="heartRateStatus">Waiting for data...</div>
+              </div>
+            </div>
+
+            <div class="vital-card">
+              <div class="vital-icon">🫁</div>
+              <div class="vital-info">
+                <h3>SpO2</h3>
+                <div class="vital-value">
+                  <span id="spo2">--</span>
+                  <span class="unit">%</span>
+                </div>
+                <div class="vital-status" id="spo2Status">Waiting for data...</div>
+              </div>
+            </div>
+
+            <div class="vital-card">
+              <div class="vital-icon">🌡️</div>
+              <div class="vital-info">
+                <h3>Temperature</h3>
+                <div class="vital-value">
+                  <span id="temperature">--</span>
+                  <span class="unit"></span>
+                </div>
+                <div class="vital-status" id="temperatureStatus">Waiting for data...</div>
+              </div>
+            </div>
+
+            <div class="vital-card">
+              <div class="vital-icon">📊</div>
+              <div class="vital-info">
+                <h3>Device Status</h3>
+                <div class="vital-value">
+                  <span id="deviceStatus">Connected</span>
+                </div>
+                <div class="vital-status" id="deviceStatusText">Online</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Charts Section -->
+      <section class="charts-section">
+        <div class="chart-container">
+          <h2>Real-time Trends</h2>
+          <canvas id="vitalChart" width="400" height="200"></canvas>
+        </div>
+
+        <div class="chart-container">
+          <h2>ECG Waveform</h2>
+          <canvas id="ecgChart" width="400" height="200"></canvas>
+        </div>
+      </section>
+
+      <!-- Historical Data -->
+      <section class="history-section">
+        <h2>Historical Data</h2>
+        <div class="time-range-selector">
+          <button class="time-btn active" onclick="selectTimeRange('1h')">1 Hour</button>
+          <button class="time-btn" onclick="selectTimeRange('6h')">6 Hours</button>
+          <button class="time-btn" onclick="selectTimeRange('24h')">24 Hours</button>
+          <button class="time-btn" onclick="selectTimeRange('7d')">7 Days</button>
+        </div>
+        <div class="history-chart">
+          <canvas id="historyChart" width="800" height="300"></canvas>
+        </div>
+      </section>
+
+      <!-- Alerts Section -->
+      <section class="alerts-section">
+        <h2>Health Alerts</h2>
+        <div class="alerts-container" id="alertsContainer">
+          <div class="alert-item info">
+            <div class="alert-icon">ℹ️</div>
+            <div class="alert-content">
+              <h4>System Status</h4>
+              <p>All sensors are connected and functioning normally.</p>
+              <span class="alert-time">Just now</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Quick Actions -->
+      <section class="actions-section">
+        <h2>Quick Actions</h2>
+        <div class="actions-grid">
+          <button class="action-btn" onclick="exportData()">
+            📊 Export Data
+          </button>
+          <button class="action-btn" onclick="shareWithDoctor()">
+            👨‍⚕️ Share with Doctor
+          </button>
+          <button class="action-btn" onclick="setReminder()">
+            ⏰ Set Reminder
+          </button>
+          <button class="action-btn" onclick="viewTrends()">
+            📈 View Trends
+          </button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <!-- Chart.js CDN with date adapter -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+  <!-- Socket.IO CDN -->
+  <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+  <script src="./assets/js/main.js"></script>
+  <script src="./assets/js/vital.js"></script>
+</body>
+
+</html>

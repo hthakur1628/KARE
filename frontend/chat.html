@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Kare - Healthcare Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="assets/css/chat.css">
+</head>
+<body>
+    <div class="main-wrapper">
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" class="logo">Kare</a>
+                <button class="toggle-btn" onclick="toggleSidebar()">✕</button>
+            </div>
+
+            <div class="sidebar-section">
+                <button class="new-chat-btn" onclick="clearConversation()">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14m-7-7h14" />
+                    </svg>
+                    New Chat
+                </button>
+            </div>
+
+            <div class="sidebar-section" style="margin-top: auto; border-top: 1px solid #e5e7eb; padding-top: 1rem;">
+                <div style="padding: 0.5rem; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="width: 36px; height: 36px; border-radius: 50%; background: var(--primary-blue); color: white; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem;" class="user-avatar">U</div>
+                    <div>
+                        <div style="font-weight: 600; color: var(--dark-gray); margin-bottom: 0.25rem;" class="user-name">User</div>
+                        <div style="font-size: 0.8rem; color: var(--medium-gray);">Healthcare Assistant</div>
+                    </div>
+                </div>
+                <button onclick="logout()" style="width: 100%; padding: 0.75rem; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 500;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16,17 21,12 16,7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                    </svg>
+                    Sign Out
+                </button>
+            </div>
+        </div>
+
+        <section class="chat-fullscreen-section">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <button class="menu-toggle-btn" onclick="toggleSidebar()" style="display: none;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="3" y1="6" x2="21" y2="6"></line>
+                            <line x1="3" y1="12" x2="21" y2="12"></line>
+                            <line x1="3" y1="18" x2="21" y2="18"></line>
+                        </svg>
+                    </button>
+                    <div class="chat-avatar">K</div>
+                    <div>
+                        <h3>Kare Healthcare Assistant</h3>
+                        <p>● Online • Ready to help</p>
+                    </div>
+                </div>
+
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message bot">
+                        <p>Hello! I'm Kare, your AI healthcare assistant. I'm here to help answer your health questions and provide general medical guidance. How can I assist you today?</p>
+                        <div class="welcome-note">
+                            <small>💡 Please note: I provide general health information and should not replace professional medical advice.</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="attachment-preview" id="attachmentPreview" style="display: none;">
+                    <div class="preview-content">
+                        <img id="previewImage" src="" alt="Preview">
+                        <div class="preview-info">
+                            <span id="fileName"></span>
+                            <button class="remove-attachment" onclick="removeAttachment()">×</button>
+                        </div>
+                    </div>
+                </div>
+
+                <form class="chat-input-container" id="chatForm">
+                    <button type="button" class="attachment-btn" onclick="triggerFileUpload()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66L9.64 16.2a2 2 0 0 1-2.83-2.83l8.49-8.49"></path>
+                        </svg>
+                    </button>
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="handleFileSelect(event)">
+                    <textarea class="chat-input" id="messageInput" placeholder="Type your health question here..." rows="1"></textarea>
+                    <button type="submit" class="send-btn" id="sendBtn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22,2 15,22 11,13 2,9"></polygon>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </section>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+    <script src="assets/js/chat.js"></script>
+</body>
+</html>
