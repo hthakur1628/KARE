@@ -24,22 +24,53 @@ function initializeForm() {
     }
 }
 
-// Main form submission handler
+// Enhanced loading state function matching forgot password pattern
+function setLoading(buttonSelector, loading, loadingText = 'Processing...') {
+    const button = document.querySelector(buttonSelector);
+    if (!button) return;
+    
+    const originalText = button.getAttribute('data-original-text') || button.textContent.trim();
+    
+    if (!button.getAttribute('data-original-text')) {
+        button.setAttribute('data-original-text', originalText);
+    }
+    
+    if (loading) {
+        button.disabled = true;
+        button.innerHTML = `<span class="loading"></span>${loadingText}`;
+        button.classList.add('loading-state');
+    } else {
+        button.disabled = false;
+        button.innerHTML = originalText;
+        button.classList.remove('loading-state');
+    }
+}
+
+// Add success/error visual feedback
+function setButtonState(buttonSelector, state, duration = 2000) {
+    const button = document.querySelector(buttonSelector);
+    if (!button) return;
+    
+    button.classList.remove('success', 'error');
+    
+    if (state === 'success' || state === 'error') {
+        button.classList.add(state);
+        setTimeout(() => {
+            button.classList.remove(state);
+        }, duration);
+    }
+}
+
+// Main form submission handler with enhanced feedback
 async function handleSignup(event) {
     event.preventDefault();
     
     if (!validateSignupForm()) {
+        setButtonState('.auth-btn', 'error');
         return;
     }
 
-    const submitBtn = document.querySelector('.auth-btn');
-    const btnText = submitBtn.querySelector('.btn-text');
-    const spinner = submitBtn.querySelector('.loading-spinner');
-    
-    // Show loading state
-    submitBtn.disabled = true;
-    btnText.style.display = 'none';
-    spinner.classList.remove('hidden');
+    setLoading('.auth-btn', true, 'Creating Account...');
 
     try {
         const formData = collectFormData();
@@ -55,6 +86,8 @@ async function handleSignup(event) {
         const result = await response.json();
 
         if (response.ok) {
+            setButtonState('.auth-btn', 'success');
+            
             // Store authentication data
             localStorage.setItem('token', result.token);
             localStorage.setItem('user', JSON.stringify(result.user));
@@ -67,16 +100,15 @@ async function handleSignup(event) {
                 window.location.href = 'index.html';
             }, 2000);
         } else {
+            setButtonState('.auth-btn', 'error');
             showErrorMessage(result.error || 'Registration failed. Please try again.');
         }
     } catch (error) {
         console.error('Registration error:', error);
+        setButtonState('.auth-btn', 'error');
         showErrorMessage('Network error. Please check your connection and try again.');
     } finally {
-        // Reset button state
-        submitBtn.disabled = false;
-        btnText.style.display = 'inline';
-        spinner.classList.add('hidden');
+        setLoading('.auth-btn', false);
     }
 }
 

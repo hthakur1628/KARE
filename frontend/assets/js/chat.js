@@ -17,8 +17,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// Socket functionality with authentication
+// Socket functionality with Gemini integration
 const socket = io("http://localhost:5001", {
+    transports: ['polling', 'websocket'],
+    upgrade: true,
+    rememberUpgrade: false,
+    timeout: 20000,
+    forceNew: true,
     auth: {
         token: token
     }
@@ -27,49 +32,102 @@ const socket = io("http://localhost:5001", {
 // DOM elements - will be initialized after DOM loads
 let messageInput, sendBtn, chatMessages, fileInput, attachmentPreview, previewImage, fileName;
 
-// Global variables for attachment
+// Global variables for attachment and session
 let currentAttachment = null;
+let sessionId = generateSessionId();
 
-// Main Event Listener for Server Responses
-socket.on("bot_response", (response) => {
+// Generate unique session ID
+function generateSessionId() {
+  return 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// Socket connection events
+socket.on('connect', () => {
+  console.log('✅ Connected to Kare Healthcare Assistant');
+  
+  // Join user room for personalized chat
+  socket.emit('join_room', {
+    user_email: user.email,
+    session_id: sessionId
+  });
+  
+  // Get conversation history
+  socket.emit('get_conversation_history', {
+    user_email: user.email,
+    session_id: sessionId
+  });
+});
+
+// Listen for messages from the server
+socket.on('message', (data) => {
   hideTypingIndicator();
-
-  // Format response (works for both Gemini and Azure OpenAI)
-  const formattedResponse = formatResponse(response);
-
-  addMessage(formattedResponse, "bot", true);
-
+  
+  if (data.role === 'assistant') {
+    // Format and display AI response
+    const formattedResponse = formatResponse(data.content);
+    addMessage(formattedResponse, "bot", true);
+  } else if (data.role === 'user') {
+    // This is an echo of our own message, we can ignore it
+    // since we already added it to the UI when sending
+  }
+  
   messageInput.disabled = false;
   sendBtn.disabled = false;
   messageInput.focus();
 });
 
+// Listen for conversation history
+socket.on('conversation_history', (data) => {
+  console.log('📜 Received conversation history');
+  
+  // Clear current messages except welcome message
+  const welcomeMessage = chatMessages.querySelector('.message.bot');
+  chatMessages.innerHTML = '';
+  if (welcomeMessage) {
+    chatMessages.appendChild(welcomeMessage);
+  }
+  
+  // Add historical messages
+  data.history.forEach(msg => {
+    if (msg.role === 'user') {
+      addMessage(msg.content, 'user');
+    } else if (msg.role === 'assistant') {
+      const formattedResponse = formatResponse(msg.content);
+      addMessage(formattedResponse, 'bot', true);
+    }
+  });
+});
+
 // Listen for conversation cleared event
-socket.on("conversation_cleared", (data) => {
-  console.log("Conversation cleared:", data.message);
+socket.on('conversation_cleared', (data) => {
+  console.log("✅ Conversation cleared:", data.msg);
+  
+  // Reset the chat to welcome message
+  chatMessages.innerHTML = `
+    <div class="message bot">
+      <p>Hello! I'm Kare, your AI healthcare assistant. I'm here to help answer your health questions and provide general medical guidance. How can I assist you today?</p>
+      <div class="welcome-note">
+        <small>💡 Please note: I provide general health information and should not replace professional medical advice.</small>
+      </div>
+    </div>
+  `;
 });
 
-// Listen for connection success
-socket.on("connection_success", (data) => {
-  console.log("Connected:", data.message);
+// Listen for status messages
+socket.on('status', (data) => {
+  console.log('ℹ️ Status:', data.msg);
 });
 
-// Listen for authentication errors
-socket.on("error", (data) => {
-  console.error("Socket error:", data.message);
+// Listen for errors
+socket.on('error', (data) => {
+  console.error("❌ Socket error:", data.msg);
   hideTypingIndicator();
   
-  if (data.message === 'Authentication required') {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = 'login.html';
-  } else {
-    // Show generic error message for other errors
-    addMessage("Could not reach server, try again later", "bot");
-    messageInput.disabled = false;
-    sendBtn.disabled = false;
-    messageInput.focus();
-  }
+  // Show error message to user
+  addMessage(`Error: ${data.msg}`, "bot");
+  messageInput.disabled = false;
+  sendBtn.disabled = false;
+  messageInput.focus();
 });
 
 // Handle connection errors
@@ -227,15 +285,18 @@ function sendMessage() {
   const message = messageInput.value.trim();
   if ((message === "" && !currentAttachment) || messageInput.disabled) return;
 
-  // Prepare message data
+  // Prepare message data for Gemini integration
   const messageData = {
-    text: message,
+    message: message,
+    user_email: user.email,
+    session_id: sessionId,
     attachment: currentAttachment
   };
 
-  socket.emit("user_input", messageData);
+  // Send message to server
+  socket.emit("send_message", messageData);
   
-  // Add message to UI
+  // Add message to UI immediately
   if (currentAttachment) {
     addMessageWithAttachment(message, currentAttachment, "user");
   } else {
@@ -254,15 +315,12 @@ function sendMessage() {
 
 // Clear conversation function
 function clearConversation() {
-  socket.emit("clear_conversation");
-  chatMessages.innerHTML = `
-    <div class="message bot">
-      <p>Hello! I'm Kare, your AI healthcare assistant. I'm here to help answer your health questions and provide general medical guidance. How can I assist you today?</p>
-      <div class="welcome-note">
-        <small>💡 Please note: I provide general health information and should not replace professional medical advice.</small>
-      </div>
-    </div>
-  `;
+  socket.emit("clear_conversation", {
+    user_email: user.email,
+    session_id: sessionId
+  });
+  
+  // The UI will be updated when we receive the 'conversation_cleared' event
 }
 
 // Attachment functions

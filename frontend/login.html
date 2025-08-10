@@ -75,22 +75,44 @@
             document.getElementById('successMessage').style.display = 'none';
         }
 
-        function setLoading(buttonId, loading) {
+        // Enhanced loading state function matching forgot password pattern
+        function setLoading(buttonId, loading, loadingText = 'Processing...') {
             const button = document.getElementById(buttonId);
+            const originalText = button.getAttribute('data-original-text') || button.textContent.trim();
+            
+            if (!button.getAttribute('data-original-text')) {
+                button.setAttribute('data-original-text', originalText);
+            }
+            
             if (loading) {
                 button.disabled = true;
-                button.innerHTML = '<span class="loading"></span>Signing in...';
+                button.innerHTML = `<span class="loading"></span>${loadingText}`;
+                button.classList.add('loading-state');
             } else {
                 button.disabled = false;
-                button.innerHTML = 'Sign In';
+                button.innerHTML = originalText;
+                button.classList.remove('loading-state');
             }
         }
 
-        // Login form handler
+        // Add success/error visual feedback
+        function setButtonState(buttonId, state, duration = 2000) {
+            const button = document.getElementById(buttonId);
+            button.classList.remove('success', 'error');
+            
+            if (state === 'success' || state === 'error') {
+                button.classList.add(state);
+                setTimeout(() => {
+                    button.classList.remove(state);
+                }, duration);
+            }
+        }
+
+        // Login form handler with enhanced feedback
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             clearMessages();
-            setLoading('loginBtn', true);
+            setLoading('loginBtn', true, 'Signing in...');
 
             const formData = new FormData(e.target);
             const data = {
@@ -110,16 +132,20 @@
                 const result = await response.json();
 
                 if (response.ok) {
+                    setButtonState('loginBtn', 'success');
                     localStorage.setItem('token', result.token);
                     localStorage.setItem('user', JSON.stringify(result.user));
                     showSuccess('Login successful! Redirecting...');
+                    
                     setTimeout(() => {
                         window.location.href = 'index.html';
-                    }, 1000);
+                    }, 1500);
                 } else {
+                    setButtonState('loginBtn', 'error');
                     showError(result.error || 'Login failed');
                 }
             } catch (error) {
+                setButtonState('loginBtn', 'error');
                 showError('Network error. Please try again.');
             } finally {
                 setLoading('loginBtn', false);

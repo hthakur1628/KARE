@@ -3,11 +3,10 @@ import jwt
 from datetime import datetime, timedelta, timezone
 from functools import wraps
 from flask import Flask, request, jsonify
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_cors import CORS
 from flask_mail import Mail, Message
-from openai import AzureOpenAI
-from azure.identity import DefaultAzureCredential, get_bearer_token_provider
+# Removed Azure OpenAI imports - now using Gemini
 from dotenv import load_dotenv
 from collections import defaultdict
 import random
@@ -32,8 +31,21 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 init_db(app)
 
 # Initialize CORS and Flask-SocketIO
-CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+CORS(app, origins="*", supports_credentials=True)
+
+# Create SocketIO with better error handling
+socketio = SocketIO(
+    app, 
+    cors_allowed_origins="*",
+    async_mode='threading',
+    logger=False,
+    engineio_logger=False,
+    ping_timeout=60,
+    ping_interval=25,
+    max_http_buffer_size=1000000,
+    always_connect=False,
+    transports=['polling', 'websocket']
+)
 
 # Flask-Mail configuration
 app.config['MAIL_SERVER'] = os.getenv('MAIL_SERVER', 'smtp.gmail.com')
@@ -50,81 +62,63 @@ mail = Mail(app)
 # Store OTPs temporarily (in production, use Redis or database)
 otp_storage = {}
 
-# --- 2. AZURE OPENAI CONFIGURATION ---
+# --- 2. GEMINI AI CONFIGURATION ---
 
-# Get Azure OpenAI configuration from environment variables
-endpoint_url = os.getenv("ENDPOINT_URL", "https://kare.openai.azure.com/")
-deployment = os.getenv("DEPLOYMENT_NAME", "gpt-4-1-mini-2025-04-14-ft-114dcd1904b84a77a945b14818aa398a-2")
-api_key = os.getenv("AZURE_OPENAI_API_KEY")
+import google.generativeai as genai
 
-# Extract base endpoint from full URL if needed
-if "/openai/deployments/" in endpoint_url:
-    endpoint = endpoint_url.split("/openai/deployments/")[0] + "/"
-else:
-    endpoint = endpoint_url
+# Get Gemini configuration from environment variables
+gemini_api_key = os.getenv("GEMINI_API_KEY")
+gemini_model_name = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 
-print(f"🔧 Azure OpenAI Configuration:")
-print(f"   Endpoint: {endpoint}")
-print(f"   Deployment: {deployment}")
-print(f"   API Key: {'✅ Configured' if api_key else '❌ Not configured'}")
+print(f"🔧 Gemini AI Configuration:")
+print(f"   Model: {gemini_model_name}")
+print(f"   API Key: {'✅ Configured' if gemini_api_key else '❌ Not configured'}")
 
-# Initialize Azure OpenAI client
-client = None
+# Initialize Gemini client
+gemini_model = None
 
-# Try API key authentication first (more reliable for development)
-if api_key:
+if gemini_api_key:
     try:
-        client = AzureOpenAI(
-            azure_endpoint=endpoint,
-            api_key=api_key,
-            api_version="2025-01-01-preview"
-        )
-        print("✅ Using API key authentication")
+        # Configure Gemini
+        genai.configure(api_key=gemini_api_key)
+        
+        # Initialize the model
+        gemini_model = genai.GenerativeModel(gemini_model_name)
         
         # Test the connection
-        test_response = client.chat.completions.create(
-            model=deployment,
-            messages=[{"role": "user", "content": "test"}],
-            max_tokens=5
-        )
-        print("✅ Azure OpenAI connection test successful")
+        test_response = gemini_model.generate_content("Hello, this is a test.")
+        print("✅ Gemini AI connection test successful")
+        print(f"   Test response: {test_response.text[:50]}...")
         
-    except Exception as api_error:
-        print(f"⚠️  API key authentication failed: {str(api_error)}")
-        client = None
-        
-        # Try Entra ID authentication as fallback
-        try:
-            token_provider = get_bearer_token_provider(
-                DefaultAzureCredential(),
-                "https://cognitiveservices.azure.com/.default"
-            )
-            client = AzureOpenAI(
-                azure_endpoint=endpoint,
-                azure_ad_token_provider=token_provider,
-                api_version="2025-01-01-preview"
-            )
-            print("✅ Using Entra ID authentication as fallback")
-            
-        except Exception as entra_error:
-            print(f"⚠️  Entra ID authentication also failed: {str(entra_error)}")
-            print("⚠️  The application will run without AI chat functionality")
-            client = None
+    except Exception as gemini_error:
+        print(f"⚠️  Gemini AI authentication failed: {str(gemini_error)}")
+        print("⚠️  The application will run without AI chat functionality")
+        gemini_model = None
 else:
-    print("⚠️  No API key configured")
+    print("⚠️  No Gemini API key configured")
     print("⚠️  The application will run without AI chat functionality")
-    client = None
+    gemini_model = None
 
-# System message for the medical assistant
-SYSTEM_MESSAGE = {
-    "role": "system",
-    "content": [
-        {
-            "type": "text",
-            "text": "You are a polite and empathetic medical assistant who replies like a human doctor. Use polite expressions and some natural reactions (like 'Oh no!', 'That sounds uncomfortable 😟'). For non-medical questions, respond normally.\n\nWhen the user mentions a symptom:\n\nFirst, ask for their age\n\nThen ask for any other symptoms\n\nThen ask for vital signs, but only the ones relevant to the symptoms:\n\nFor fever → ask for temperature\n\nFor chest pain / shortness of breath / dizziness → ask for heart rate, SpO₂, ECG (if available)\n\nFor headache / fainting / weakness → ask for blood pressure (if known)\n\nFor palpitations / anxiety → ask for heart rate and ECG\n\nFor low energy / fatigue → ask for SpO₂, pulse rate\n\nNever respond with the full answer at once — first, ask polite, intelligent follow-up questions.\nAfter collecting enough information, suggest the most likely condition (in bold) and provide safe remedies or advice based on age group.\n\nUse bold formatting for disease names and important points in your answers. Avoid sounding robotic or overly brief or wordy."
-        }
-    ]
-}
+# System message for the medical assistant (Gemini format)
+SYSTEM_PROMPT = """You are Kare, a polite and empathetic medical assistant who replies like a human doctor. Use polite expressions and some natural reactions (like 'Oh no!', 'That sounds uncomfortable 😟'). For non-medical questions, respond normally.
+
+When the user mentions a symptom:
+
+1. First, ask for their age
+2. Then ask for any other symptoms
+3. Then ask for vital signs, but only the ones relevant to the symptoms:
+   - For fever → ask for temperature
+   - For chest pain / shortness of breath / dizziness → ask for heart rate, SpO₂, ECG (if available)
+   - For headache / fainting / weakness → ask for blood pressure (if known)
+   - For palpitations / anxiety → ask for heart rate and ECG
+   - For low energy / fatigue → ask for SpO₂, pulse rate
+
+Never respond with the full answer at once — first, ask polite, intelligent follow-up questions.
+After collecting enough information, suggest the most likely condition (in **bold**) and provide safe remedies or advice based on age group.
+
+Use **bold formatting** for disease names and important points in your answers. Avoid sounding robotic or overly brief or wordy.
+
+IMPORTANT: Always remind users that this is for informational purposes only and they should consult with a healthcare professional for proper diagnosis and treatment."""
 
 # --- 3. USER STORAGE AND AUTHENTICATION ---
 # Using SQLite database for user storage
@@ -134,8 +128,8 @@ def generate_token(user_email):
     """Generate JWT token for user"""
     payload = {
         'user_email': user_email,
-        'exp': datetime.utcnow() + app.config['JWT_EXPIRATION_DELTA'],
-        'iat': datetime.utcnow()
+        'exp': datetime.now(timezone.utc) + app.config['JWT_EXPIRATION_DELTA'],
+        'iat': datetime.now(timezone.utc)
     }
     return jwt.encode(payload, app.config['SECRET_KEY'], algorithm='HS256')
 
@@ -169,18 +163,31 @@ def token_required(f):
     return decorated
 
 # --- 4. CONVERSATION HISTORY STORAGE ---
-# Dictionary to store conversation history per user session (OpenAI format)
-conversation_histories = defaultdict(lambda: [SYSTEM_MESSAGE])
-user_conversation_histories = defaultdict(lambda: defaultdict(lambda: [SYSTEM_MESSAGE]))
+# Dictionary to store conversation history per user session (Gemini format)
+conversation_histories = defaultdict(list)
+user_conversation_histories = defaultdict(lambda: defaultdict(list))
 
 # Clear all existing conversations to ensure new system message is used
 conversation_histories.clear()
+user_conversation_histories.clear()
 
 # --- 5. HTTP ROUTES ---
 
 @app.route('/')
 def index():
-    return "Flask and Socket.IO server is running!"
+    """Serve the main index page"""
+    from flask import send_from_directory
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
+    return send_from_directory(frontend_path, 'index.html')
+
+@app.route('/<path:filename>')
+def serve_frontend(filename):
+    """Serve frontend files"""
+    from flask import send_from_directory
+    import os
+    frontend_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'frontend')
+    return send_from_directory(frontend_path, filename)
 
 @app.route('/socketio_test.html')
 def socketio_test():
@@ -392,7 +399,7 @@ def forgot_password():
         # Store OTP with expiration (10 minutes)
         otp_storage[email] = {
             'otp': otp,
-            'expires_at': datetime.utcnow() + timedelta(minutes=10),
+            'expires_at': datetime.now(timezone.utc) + timedelta(minutes=10),
             'user_id': user_data['id'],
             'attempts': 0
         }
@@ -428,7 +435,7 @@ def verify_otp():
         otp_data = otp_storage[email]
         
         # Check if OTP is expired
-        if datetime.utcnow() > otp_data['expires_at']:
+        if datetime.now(timezone.utc) > otp_data['expires_at']:
             del otp_storage[email]
             return jsonify({'error': 'OTP has expired. Please request a new one.'}), 400
         
@@ -1147,223 +1154,12 @@ def health():
     """Health check endpoint"""
     return {
         "status": "healthy",
-        "system_message": SYSTEM_MESSAGE["content"][:100] + "...",
+        "system_message": SYSTEM_PROMPT[:100] + "...",
         "deployment": deployment,
         "endpoint": endpoint
     }
 
-# --- 6. SOCKET.IO EVENT HANDLERS ---
 
-@socketio.on('connect')
-def handle_connect(auth):
-    session_id = request.sid
-    print(f'Client {session_id} attempting to connect...')
-    
-    # Verify authentication
-    token = auth.get('token') if auth else None
-    if not token:
-        print(f'Connection rejected for {session_id}: No token provided')
-        return False
-    
-    user_email = verify_token(token)
-    if not user_email:
-        print(f'Connection rejected for {session_id}: Invalid token')
-        return False
-    
-    # Store user info in session
-    user_sessions[session_id] = {
-        'user_email': user_email,
-        'connected_at': datetime.now(timezone.utc).isoformat()
-    }
-    
-    # Initialize conversation history for this user
-    if user_email not in user_conversation_histories:
-        user_conversation_histories[user_email]['default'] = [SYSTEM_MESSAGE.copy()]
-    
-    # Get user data from database
-    user_data, error = database_service.get_user_by_email(user_email)
-    user_name = user_data['name'] if user_data else 'User'
-    
-    print(f'Client {session_id} connected successfully as {user_email}')
-    emit('connection_success', {'message': f'Welcome back, {user_name}!'})
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    session_id = request.sid
-    user_session = user_sessions.get(session_id)
-    
-    if user_session:
-        print(f'Client {session_id} ({user_session["user_email"]}) disconnected.')
-        del user_sessions[session_id]
-    else:
-        print(f'Client {session_id} disconnected.')
-
-@socketio.on('clear_conversation')
-def handle_clear_conversation():
-    """Clear conversation history for current user"""
-    session_id = request.sid
-    user_session = user_sessions.get(session_id)
-    
-    if not user_session:
-        emit('error', {'message': 'Authentication required'})
-        return
-    
-    user_email = user_session['user_email']
-    
-    # Get user data from database
-    user_data, user_error = database_service.get_user_by_email(user_email)
-    if not user_error and user_data:
-        # Clear from database
-        deleted_count, db_error = database_service.clear_conversation_history(user_data['id'])
-        print(f'Cleared {deleted_count or 0} messages from database for {user_email}')
-    
-    # Clear from memory
-    user_conversation_histories[user_email]['default'] = [SYSTEM_MESSAGE.copy()]
-    
-    print(f'Cleared conversation history for {user_email}')
-    emit('conversation_cleared', {'message': 'Conversation history cleared'})
-
-@socketio.on('user_input')
-def handle_user_input(data):
-    session_id = request.sid
-    user_session = user_sessions.get(session_id)
-    
-    if not user_session:
-        emit('error', {'message': 'Authentication required'})
-        return
-    
-    user_email = user_session['user_email']
-    print(f'Received data from {user_email} ({session_id}): {data}')
-    
-    try:
-        # Get user data from database
-        user_data, user_error = database_service.get_user_by_email(user_email)
-        if user_error or not user_data:
-            emit('error', {'message': 'User not found'})
-            return
-        
-        user_id = user_data['id']
-        
-        # Validate and handle input data
-        if isinstance(data, str):
-            # Simple text message
-            user_content = data.strip()
-            message_content = data.strip()
-            message_type = 'text'
-        elif isinstance(data, dict):
-            # Message object with potential attachment
-            text = data.get('text', '').strip() if data.get('text') else ''
-            attachment = data.get('attachment')
-            
-            if attachment and isinstance(attachment, dict):
-                # Create content array for image + text
-                message_content = []
-                if text:
-                    message_content.append({
-                        "type": "text",
-                        "text": text
-                    })
-                message_content.append({
-                    "type": "image_url",
-                    "image_url": {
-                        "url": attachment.get('data', '')
-                    }
-                })
-                user_content = f"{text} [Image: {attachment.get('name', 'image')}]" if text else f"[Image: {attachment.get('name', 'image')}]"
-                message_type = 'image'
-            else:
-                message_content = text
-                user_content = text
-                message_type = 'text'
-        else:
-            # Invalid data type
-            emit('error', {'message': 'Invalid message format'})
-            return
-        
-        # Check if message is empty
-        if not user_content or user_content.strip() == '':
-            emit('error', {'message': 'Message cannot be empty'})
-            return
-        
-        # Save user message to database
-        database_service.save_conversation_message(user_id, 'default', 'user', message_content, message_type)
-        
-        # Get user's conversation history from database
-        conversation_history, history_error = database_service.get_conversation_history(user_id, 'default', 50)
-        
-        # Build conversation for OpenAI (include system message)
-        current_conversation = [SYSTEM_MESSAGE.copy()]
-        
-        if not history_error and conversation_history:
-            for msg in conversation_history:
-                if msg['role'] in ['user', 'assistant']:
-                    current_conversation.append({
-                        "role": msg['role'],
-                        "content": msg['content']
-                    })
-        
-        # Also use in-memory conversation as fallback
-        user_conversations = user_conversation_histories[user_email]
-        memory_conversation = user_conversations['default']
-        
-        # Add user message to memory conversation
-        memory_conversation.append({
-            "role": "user",
-            "content": message_content
-        })
-        
-        # Use the longer conversation (database or memory)
-        if len(current_conversation) < len(memory_conversation):
-            current_conversation = memory_conversation
-        
-        print(f'Processing message for {user_email}: {user_content[:100]}{"..." if len(user_content) > 100 else ""}')
-        
-        # Check if AI client is available
-        if client is None:
-            bot_reply = "I apologize, but the AI chat functionality is currently unavailable. The healthcare application is running, but the AI service needs to be configured. Please contact your administrator to set up Azure OpenAI credentials."
-            print(f'AI client not available, sending fallback response to {user_email}')
-        else:
-            try:
-                # Generate response using Azure OpenAI (with cache busting)
-                completion = client.chat.completions.create(
-                    model=deployment,
-                    messages=current_conversation,
-                    max_tokens=800,
-                    temperature=0.7,  # Slight randomness to prevent caching
-                    top_p=0.95,
-                    frequency_penalty=0,
-                    presence_penalty=0,
-                    stop=None,
-                    stream=False,
-                    # Add user identifier to prevent caching
-                    user=f"user_{user_email}_{int(__import__('time').time())}"
-                )
-                
-                bot_reply = completion.choices[0].message.content
-                print(f'Sending AI response to {user_email}: {bot_reply}')
-            except Exception as ai_error:
-                bot_reply = "I'm sorry, I'm experiencing technical difficulties right now. Please try again in a moment, or contact support if the problem persists."
-                print(f'AI error for {user_email}: {str(ai_error)}')
-        
-        # Save bot response to database
-        database_service.save_conversation_message(user_id, 'default', 'assistant', bot_reply, 'text')
-        
-        # Add bot response to memory conversation
-        memory_conversation.append({
-            "role": "assistant",
-            "content": bot_reply
-        })
-        
-        # Emit the response back to the client
-        emit('bot_response', bot_reply)
-        
-    except Exception as e:
-        error_message = "Sorry, I'm having trouble processing your request. Please try again."
-        print(f"Error processing message for user {user_email}: {str(e)}")
-        print(f"Data received: {data}")
-        import traceback
-        traceback.print_exc()
-        emit('error', {'message': error_message})
 
 # --- 6. RUN THE APPLICATION ---
 
@@ -1390,3 +1186,370 @@ if __name__ == '__main__':
         except Exception as e2:
             print(f"❌ Fallback also failed: {e2}")
             print("💡 Try running on a different port or check if port 5001 is already in use")
+# --- 6. SOCKET.IO EVENT HANDLERS ---
+
+@socketio.on('connect')
+def handle_connect(auth):
+    """Handle client connection with authentication"""
+    session_id = request.sid
+    print(f'Client {session_id} attempting to connect...')
+    
+    # Verify authentication
+    token = auth.get('token') if auth else None
+    if not token:
+        print(f'Connection rejected for {session_id}: No token provided')
+        return False
+    
+    user_email = verify_token(token)
+    if not user_email:
+        print(f'Connection rejected for {session_id}: Invalid token')
+        return False
+    
+    # Store user info in session
+    user_sessions[session_id] = {
+        'user_email': user_email,
+        'connected_at': datetime.now(timezone.utc).isoformat()
+    }
+    
+    # Initialize conversation history for this user
+    if user_email not in user_conversation_histories:
+        user_conversation_histories[user_email] = defaultdict(list)
+    
+    # Get user data from database
+    user_data, error = database_service.get_user_by_email(user_email)
+    user_name = user_data['name'] if user_data else 'User'
+    
+    print(f'Client {session_id} connected successfully as {user_email}')
+    emit('status', {'msg': f'Connected to Kare Healthcare Assistant'})
+    return True
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    """Handle client disconnection"""
+    session_id = request.sid
+    user_session = user_sessions.get(session_id)
+    
+    if user_session:
+        print(f'Client {session_id} ({user_session["user_email"]}) disconnected.')
+        try:
+            del user_sessions[session_id]
+        except KeyError:
+            pass  # Session already cleaned up
+    else:
+        print(f'Client {session_id} disconnected.')
+
+# Add error handler for SocketIO
+@socketio.on_error_default
+def default_error_handler(e):
+    """Handle SocketIO errors"""
+    print(f'SocketIO error: {str(e)}')
+    # Don't emit error back to client to avoid loops
+
+@socketio.on('join_room')
+def handle_join_room(data):
+    """Handle user joining a chat room"""
+    session_id = request.sid
+    user_session = user_sessions.get(session_id)
+    
+    if not user_session:
+        emit('error', {'msg': 'Authentication required'})
+        return
+    
+    try:
+        user_email = data.get('user_email')
+        if user_email and user_email == user_session['user_email']:
+            join_room(user_email)
+            print(f"👤 User {user_email} joined room")
+            emit('status', {'msg': f'Joined chat room'})
+        else:
+            emit('error', {'msg': 'Invalid user email'})
+    except Exception as e:
+        print(f"❌ Error joining room: {str(e)}")
+        emit('error', {'msg': 'Failed to join chat room'})
+
+@socketio.on('send_message')
+def handle_message(data):
+    """Handle incoming chat messages and generate AI responses"""
+    session_id = request.sid
+    user_session = user_sessions.get(session_id)
+    
+    if not user_session:
+        emit('error', {'msg': 'Authentication required'})
+        return
+    
+    try:
+        user_message = data.get('message', '').strip()
+        user_email = user_session['user_email']
+        chat_session_id = data.get('session_id', 'default')
+        
+        if not user_message:
+            emit('error', {'msg': 'Message cannot be empty'})
+            return
+        
+        print(f"💬 Received message from {user_email}: {user_message[:50]}...")
+        
+        # Get user data for context
+        user_data, error = database_service.get_user_by_email(user_email)
+        if error or not user_data:
+            emit('error', {'msg': 'User not found'})
+            return
+        
+        # Store user message in conversation history
+        user_conversation_histories[user_email][chat_session_id].append({
+            'role': 'user',
+            'content': user_message,
+            'timestamp': datetime.now(timezone.utc).isoformat()
+        })
+        
+        # Save message to database
+        try:
+            database_service.save_conversation_message(
+                user_data['id'],
+                chat_session_id,
+                'user',
+                user_message
+            )
+        except Exception as db_error:
+            print(f"⚠️  Database save error: {str(db_error)}")
+        
+        # Emit user message back to confirm receipt
+        emit('message', {
+            'role': 'user',
+            'content': user_message,
+            'timestamp': datetime.now(timezone.utc).isoformat(),
+            'session_id': chat_session_id
+        })
+        
+        # Generate AI response if Gemini is available
+        if gemini_model:
+            try:
+                # Prepare conversation context for Gemini
+                conversation_context = prepare_gemini_context(user_email, chat_session_id, user_data)
+                
+                # Generate response using Gemini
+                ai_response = generate_gemini_response(conversation_context, user_message)
+                
+                if ai_response:
+                    # Store AI response in conversation history
+                    user_conversation_histories[user_email][chat_session_id].append({
+                        'role': 'assistant',
+                        'content': ai_response,
+                        'timestamp': datetime.now(timezone.utc).isoformat()
+                    })
+                    
+                    # Save AI response to database
+                    try:
+                        database_service.save_conversation_message(
+                            user_data['id'],
+                            chat_session_id,
+                            'assistant',
+                            ai_response
+                        )
+                    except Exception as db_error:
+                        print(f"⚠️  Database save error: {str(db_error)}")
+                    
+                    # Emit AI response
+                    emit('message', {
+                        'role': 'assistant',
+                        'content': ai_response,
+                        'timestamp': datetime.now(timezone.utc).isoformat(),
+                        'session_id': chat_session_id
+                    })
+                    
+                    print(f"🤖 AI response sent to {user_email}")
+                else:
+                    emit('error', {'msg': 'Failed to generate AI response'})
+                    
+            except Exception as ai_error:
+                print(f"❌ AI Error: {str(ai_error)}")
+                emit('error', {'msg': 'AI service temporarily unavailable'})
+        else:
+            # Gemini not available, send fallback message
+            fallback_message = "I'm sorry, but the AI assistant is currently unavailable. Please try again later or contact support for assistance."
+            
+            emit('message', {
+                'role': 'assistant',
+                'content': fallback_message,
+                'timestamp': datetime.now(timezone.utc).isoformat(),
+                'session_id': chat_session_id
+            })
+            
+    except Exception as e:
+        print(f"❌ Message handling error: {str(e)}")
+        emit('error', {'msg': 'Failed to process message'})
+
+def prepare_gemini_context(user_email, session_id, user_data):
+    """Prepare conversation context for Gemini"""
+    try:
+        # Get conversation history
+        conversation_history = user_conversation_histories[user_email][session_id]
+        
+        # Prepare user context
+        user_context = f"""
+User Information:
+- Name: {user_data.get('name', 'Unknown')}
+- Age: {calculate_age(user_data.get('date_of_birth')) if user_data.get('date_of_birth') else 'Unknown'}
+- Gender: {user_data.get('gender', 'Not specified')}
+"""
+        
+        # Get recent vital signs if available
+        try:
+            latest_vitals, _ = database_service.get_latest_vital_signs(user_data['id'])
+            if latest_vitals:
+                user_context += f"""
+Recent Vital Signs:
+- Heart Rate: {latest_vitals.get('heart_rate', 'N/A')} bpm
+- Temperature: {latest_vitals.get('temperature', 'N/A')}°C
+- Blood Pressure: {latest_vitals.get('blood_pressure_systolic', 'N/A')}/{latest_vitals.get('blood_pressure_diastolic', 'N/A')} mmHg
+- SpO2: {latest_vitals.get('oxygen_saturation', 'N/A')}%
+"""
+        except Exception as vital_error:
+            print(f"⚠️  Error getting vitals: {str(vital_error)}")
+        
+        return {
+            'system_prompt': SYSTEM_PROMPT,
+            'user_context': user_context,
+            'conversation_history': conversation_history
+        }
+        
+    except Exception as e:
+        print(f"❌ Context preparation error: {str(e)}")
+        return {
+            'system_prompt': SYSTEM_PROMPT,
+            'user_context': '',
+            'conversation_history': []
+        }
+
+def generate_gemini_response(context, user_message):
+    """Generate response using Gemini AI"""
+    try:
+        # Prepare the full prompt for Gemini
+        full_prompt = f"""{context['system_prompt']}
+
+{context['user_context']}
+
+Conversation History:
+"""
+        
+        # Add conversation history
+        for msg in context['conversation_history'][-10:]:  # Last 10 messages for context
+            role = "User" if msg['role'] == 'user' else "Assistant"
+            full_prompt += f"{role}: {msg['content']}\n"
+        
+        full_prompt += f"\nUser: {user_message}\nAssistant:"
+        
+        # Generate response using Gemini
+        response = gemini_model.generate_content(
+            full_prompt,
+            generation_config=genai.types.GenerationConfig(
+                temperature=0.7,
+                max_output_tokens=1000,
+                top_p=0.8,
+                top_k=40
+            )
+        )
+        
+        if response and response.text:
+            return response.text.strip()
+        else:
+            return "I apologize, but I'm having trouble generating a response right now. Please try rephrasing your question."
+            
+    except Exception as e:
+        print(f"❌ Gemini generation error: {str(e)}")
+        return "I'm experiencing technical difficulties. Please try again in a moment."
+
+def calculate_age(date_of_birth):
+    """Calculate age from date of birth"""
+    try:
+        if not date_of_birth:
+            return None
+        
+        from datetime import datetime, date
+        if isinstance(date_of_birth, str):
+            birth_date = datetime.strptime(date_of_birth, '%Y-%m-%d').date()
+        else:
+            birth_date = date_of_birth
+        
+        today = date.today()
+        age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        return age
+    except Exception as e:
+        print(f"❌ Age calculation error: {str(e)}")
+        return None
+
+@socketio.on('clear_conversation')
+def handle_clear_conversation(data):
+    """Handle clearing conversation history"""
+    session_id = request.sid
+    user_session = user_sessions.get(session_id)
+    
+    if not user_session:
+        emit('error', {'msg': 'Authentication required'})
+        return
+    
+    try:
+        user_email = user_session['user_email']
+        chat_session_id = data.get('session_id', 'default')
+        
+        # Clear conversation history
+        if user_email in user_conversation_histories:
+            if chat_session_id in user_conversation_histories[user_email]:
+                user_conversation_histories[user_email][chat_session_id].clear()
+        
+        # Clear from database
+        user_data, error = database_service.get_user_by_email(user_email)
+        if not error and user_data:
+            database_service.clear_conversation_history(user_data['id'])
+        
+        emit('conversation_cleared', {'msg': 'Conversation history cleared'})
+        print(f"🗑️  Conversation cleared for {user_email}")
+        
+    except Exception as e:
+        print(f"❌ Clear conversation error: {str(e)}")
+        emit('error', {'msg': 'Failed to clear conversation'})
+
+@socketio.on('get_conversation_history')
+def handle_get_conversation_history(data):
+    """Handle getting conversation history"""
+    session_id = request.sid
+    user_session = user_sessions.get(session_id)
+    
+    if not user_session:
+        emit('error', {'msg': 'Authentication required'})
+        return
+    
+    try:
+        user_email = user_session['user_email']
+        chat_session_id = data.get('session_id', 'default')
+        
+        # Get conversation history
+        history = user_conversation_histories[user_email].get(chat_session_id, [])
+        
+        emit('conversation_history', {
+            'history': history,
+            'session_id': chat_session_id
+        })
+        
+        print(f"📜 Sent conversation history to {user_email}")
+        
+    except Exception as e:
+        print(f"❌ Get conversation history error: {str(e)}")
+        emit('error', {'msg': 'Failed to get conversation history'})
+
+# --- MAIN APPLICATION STARTUP ---
+
+if __name__ == '__main__':
+    print("🚀 Starting Kare Healthcare Server...")
+    print("🌐 Server will be available at: http://localhost:5001")
+    print("🔗 Frontend should connect to: http://localhost:5001")
+    print("==================================================")
+    
+    # Run the application
+    socketio.run(
+        app,
+        host='127.0.0.1',
+        port=5001,
+        debug=True,
+        allow_unsafe_werkzeug=True,
+        use_reloader=False
+    )

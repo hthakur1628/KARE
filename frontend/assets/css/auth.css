@@ -114,10 +114,49 @@
 /* Auth Button */
 .auth-btn {
     width: 100%;
-    padding: 1rem;
+    padding: 1rem 1.5rem;
     font-size: 1rem;
+    font-weight: 600;
     margin-bottom: 1rem;
     position: relative;
+    background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+    color: var(--white);
+    border: none;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-height: 52px;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+    text-transform: none;
+    letter-spacing: 0.025em;
+}
+
+.auth-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--dark-blue), var(--primary-blue));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+}
+
+.auth-btn:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+.auth-btn:disabled {
+    background: linear-gradient(135deg, var(--medium-gray), #9ca3af);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    opacity: 0.8;
+}
+
+.auth-btn:disabled:hover {
+    transform: none;
+    box-shadow: none;
 }
 
 /* Auth Footer */
@@ -501,10 +540,552 @@
 }
 
 /* Loading Spinner for Auth Buttons */
+.loading {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 0.5rem;
+}
+
 .auth-btn .loading-spinner {
     display: none;
 }
 
 .auth-btn .loading-spinner:not(.hidden) {
     display: inline;
+}
+
+/* Specific Button Styling for Forgot Password Steps */
+#sendOtpBtn {
+    background: linear-gradient(135deg, var(--accent-teal), var(--primary-blue));
+    position: relative;
+    overflow: hidden;
+}
+
+#sendOtpBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal));
+}
+
+#sendOtpBtn::before {
+    content: '📧';
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
+#sendOtpBtn:hover::before {
+    transform: scale(1.1);
+}
+
+#verifyOtpBtn {
+    background: linear-gradient(135deg, var(--success-green), var(--primary-blue));
+    position: relative;
+    overflow: hidden;
+}
+
+#verifyOtpBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-blue), var(--success-green));
+}
+
+#verifyOtpBtn::before {
+    content: '🔐';
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
+#verifyOtpBtn:hover::before {
+    transform: scale(1.1);
+}
+
+#resetPasswordBtn {
+    background: linear-gradient(135deg, var(--warning-orange), var(--primary-blue));
+    position: relative;
+    overflow: hidden;
+}
+
+#resetPasswordBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-blue), var(--warning-orange));
+}
+
+#resetPasswordBtn::before {
+    content: '🔑';
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
+#resetPasswordBtn:hover::before {
+    transform: scale(1.1);
+}
+
+/* Button Loading States */
+.auth-btn:disabled::before {
+    opacity: 0.6;
+    transform: none;
+}
+
+/* Enhanced Button Animations */
+.auth-btn {
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-btn::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.auth-btn:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* Success State Animation */
+.auth-btn.success {
+    background: linear-gradient(135deg, var(--success-green), #059669) !important;
+    animation: successPulse 0.6s ease-out;
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* Error State Animation */
+.auth-btn.error {
+    background: linear-gradient(135deg, var(--error-red), #dc2626) !important;
+    animation: errorShake 0.6s ease-out;
+}
+
+@keyframes errorShake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-5px);
+    }
+    75% {
+        transform: translateX(5px);
+    }
+}
+
+/* Loading State for Buttons */
+.auth-btn.loading-state {
+    pointer-events: none;
+    opacity: 0.9;
+}
+
+.auth-btn.loading-state::before {
+    opacity: 0.6;
+}
+
+/* Resend OTP Link Styling */
+#resendOtp {
+    color: var(--primary-blue);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border-radius: var(--border-radius);
+    transition: all 0.3s ease;
+    display: inline-block;
+    position: relative;
+    border: 1px solid transparent;
+}
+
+#resendOtp:hover {
+    background: var(--light-blue);
+    color: var(--dark-blue);
+    transform: translateY(-1px);
+    border-color: var(--primary-blue);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+}
+
+#resendOtp::before {
+    content: '🔄';
+    margin-right: 0.5rem;
+    transition: transform 0.3s ease;
+}
+
+#resendOtp:hover::before {
+    transform: rotate(180deg);
+}
+
+/* Enhanced Step Transitions */
+.auth-step {
+    transition: all 0.4s ease-in-out;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.auth-step[style*="display: none"] {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+/* Specific Button Styling for Login Page */
+#loginBtn {
+    background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue));
+    position: relative;
+    overflow: hidden;
+}
+
+#loginBtn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--dark-blue), var(--primary-blue));
+}
+
+#loginBtn::before {
+    content: '🔐';
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
+#loginBtn:hover::before {
+    transform: scale(1.1);
+}
+
+/* Specific Button Styling for Signup Page */
+.auth-btn[type="submit"] {
+    background: linear-gradient(135deg, var(--success-green), var(--primary-blue));
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-btn[type="submit"]:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-blue), var(--success-green));
+}
+
+.auth-btn[type="submit"]::before {
+    content: '✨';
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
+.auth-btn[type="submit"]:hover::before {
+    transform: scale(1.1);
+}
+
+/* Enhanced Button Styling for Profile and Vital Pages */
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)) !important;
+    color: var(--white) !important;
+    border: none !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: var(--border-radius) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    min-height: 48px !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
+    text-decoration: none !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--dark-blue), var(--primary-blue)) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3) !important;
+}
+
+.btn-primary:active:not(:disabled) {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
+}
+
+.btn-primary:disabled {
+    background: linear-gradient(135deg, var(--medium-gray), #9ca3af) !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.8 !important;
+}
+
+/* Enhanced Button Styling for Secondary Buttons */
+.btn-secondary {
+    background: var(--white) !important;
+    color: var(--primary-blue) !important;
+    border: 2px solid var(--primary-blue) !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: var(--border-radius) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    min-height: 48px !important;
+    text-decoration: none !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: var(--primary-blue) !important;
+    color: var(--white) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3) !important;
+}
+
+.btn-secondary:active:not(:disabled) {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
+}
+
+/* Enhanced Button Styling for Danger Buttons */
+.btn-danger {
+    background: linear-gradient(135deg, var(--error-red), #dc2626) !important;
+    color: var(--white) !important;
+    border: none !important;
+    padding: 0.75rem 1.5rem !important;
+    border-radius: var(--border-radius) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    min-height: 48px !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2) !important;
+    text-decoration: none !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: linear-gradient(135deg, #dc2626, var(--error-red)) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.3) !important;
+}
+
+.btn-danger:active:not(:disabled) {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Device Link Button Specific Styling */
+.device-link-btn {
+    background: linear-gradient(135deg, var(--accent-teal), var(--primary-blue)) !important;
+}
+
+.device-link-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-blue), var(--accent-teal)) !important;
+}
+
+.device-link-btn::before {
+    content: '🔗';
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+    transition: transform 0.3s ease;
+}
+
+.device-link-btn:hover::before {
+    transform: scale(1.1);
+}
+
+/* Action Buttons Styling */
+.action-btn {
+    background: linear-gradient(135deg, var(--light-blue), var(--white)) !important;
+    color: var(--primary-blue) !important;
+    border: 2px solid var(--primary-blue) !important;
+    padding: 1rem 1.5rem !important;
+    border-radius: var(--border-radius) !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+    min-height: 56px !important;
+    text-decoration: none !important;
+    position: relative !important;
+    overflow: hidden !important;
+    font-size: 1rem !important;
+}
+
+.action-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, var(--primary-blue), var(--dark-blue)) !important;
+    color: var(--white) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3) !important;
+}
+
+.action-btn:active:not(:disabled) {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2) !important;
+}
+
+/* Time Range Buttons */
+.time-btn {
+    background: var(--white) !important;
+    color: var(--primary-blue) !important;
+    border: 2px solid var(--light-gray) !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: var(--border-radius) !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-height: 40px !important;
+    text-decoration: none !important;
+}
+
+.time-btn:hover:not(:disabled) {
+    background: var(--light-blue) !important;
+    border-color: var(--primary-blue) !important;
+    transform: translateY(-1px) !important;
+}
+
+.time-btn.active {
+    background: var(--primary-blue) !important;
+    color: var(--white) !important;
+    border-color: var(--primary-blue) !important;
+}
+
+/* Refresh Button */
+.refresh-btn {
+    background: var(--light-blue) !important;
+    color: var(--primary-blue) !important;
+    border: 1px solid var(--primary-blue) !important;
+}
+
+.refresh-btn:hover:not(:disabled) {
+    background: var(--primary-blue) !important;
+    color: var(--white) !important;
+}
+
+/* Unlink Button */
+.unlink-btn {
+    background: linear-gradient(135deg, var(--error-red), #dc2626) !important;
+    color: var(--white) !important;
+    border: none !important;
+}
+
+.unlink-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #dc2626, var(--error-red)) !important;
+}
+
+/* Enhanced Input Focus States */
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    transform: translateY(-1px);
+}
+
+/* OTP Input Enhancement */
+#otp {
+    text-align: center;
+    font-size: 1.5rem;
+    font-weight: 600;
+    letter-spacing: 0.5rem;
+    font-family: 'Courier New', monospace;
+    background: linear-gradient(135deg, #f8fafc, #ffffff);
+    border: 2px solid var(--light-gray);
+    transition: all 0.3s ease;
+}
+
+#otp:focus {
+    background: linear-gradient(135deg, #ffffff, #f8fafc);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1), 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+/* Timer Styling Enhancement */
+#otpTimer {
+    font-weight: 700;
+    color: var(--primary-blue);
+    background: var(--light-blue);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+}
+
+/* Step Info Enhancement */
+.step-info {
+    background: linear-gradient(135deg, var(--light-blue), rgba(37, 99, 235, 0.05));
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    border: 1px solid rgba(37, 99, 235, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.step-info::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-blue), var(--accent-teal));
+}
+
+/* Password Requirements Enhancement */
+.password-requirements {
+    background: linear-gradient(135deg, #f3f4f6, #ffffff);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-left: 4px solid var(--primary-blue);
+}
+
+.password-requirements p {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--dark-gray);
+    font-weight: 500;
+}
+
+/* Success/Error Message Enhancements */
+.success-message {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(16, 185, 129, 0.05));
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    color: var(--success-green);
+    font-weight: 500;
+}
+
+.error-message {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(239, 68, 68, 0.05));
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    color: var(--error-red);
+    font-weight: 500;
 }
