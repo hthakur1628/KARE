@@ -1,0 +1,110 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
+#include <WiFiClient.h>
+#include <ArduinoJson.h>
+#include <time.h>
+
+// WiFi credentials
+const char* ssid = "himanshu";
+const char* password = "12345678";
+
+// Server configuration
+const char* serverURL = "http://192.168.1.100:3001/device";
+
+// Device configuration
+String deviceId = "ESP8266-AD8232";
+
+// ECG pin
+#define ECG_PIN A0
+
+// Timing
+unsigned long lastReading = 0;
+const unsigned long readingInterval = 30000; // 30 seconds
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("AD8232 ECG Module Starting...");
+
+  // Connect to WiFi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nWiFi Connected!");
+
+  // Initialize time
+  configTime(0, 0, "pool.ntp.org");
+  while (time(nullptr) < 8 * 3600 * 2) {
+    delay(500);
+  }
+
+  Serial.println("\n=== DEVICE INFO ===");
+  Serial.println("Device ID: " + deviceId);
+  Serial.println("===================\n");
+}
+
+void loop() {
+  if (millis() - lastReading >= readingInterval) {
+    readAndSendECG();
+    lastReading = millis();
+  }
+}
+
+void readAndSendECG() {
+  const int samples = 10;
+  int ecgData[samples];
+
+  for (int i = 0; i < samples; i++) {
+    ecgData[i] = analogRead(ECG_PIN);
+    delay(5);
+  }
+
+  // Print data for debug
+  Serial.print("ECG Samples: ");
+  for (int i = 0; i < samples; i++) {
+    Serial.print(ecgData[i]);
+    Serial.print(i < samples - 1 ? "," : "\n");
+  }
+
+  // Create JSON
+  DynamicJsonDocument doc(512);
+  doc["device_id"] = deviceId;
+
+  time_t now = time(nullptr);
+  struct tm* timeinfo = gmtime(&now);
+  char timestamp[32];
+  strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%SZ", timeinfo);
+  doc["timestamp"] = timestamp;
+
+  JsonObject data = doc.createNestedObject("data");
+  data["temperature_f"] = 0;
+  data["heart_rate_bpm"] = 0;
+  data["spo2_percent"] = 0;
+
+  JsonArray ecgArray = data.createNestedArray("ecg_mV");
+  for (int i = 0; i < samples; i++) {
+    ecgArray.add(ecgData[i]);
+  }
+
+  String jsonString;
+  serializeJson(doc, jsonString);
+
+  if (WiFi.status() == WL_CONNECTED) {
+    WiFiClient client;
+    HTTPClient http;
+
+    http.begin(client, serverURL);
+    http.addHeader("Content-Type", "application/json");
+
+    int responseCode = http.POST(jsonString);
+
+    if (responseCode == 200) {
+      Serial.println("✓ Data sent successfully");
+    } else {
+      Serial.println("✗ Send failed: " + String(responseCode));
+    }
+
+    http.end();
+  }
+}
